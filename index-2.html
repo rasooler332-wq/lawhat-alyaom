@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14202B">
+<title>لوحة اليوم</title>
+<style>
+:root{
+  box-sizing:border-box;
+  --bg:#EDF0F3; --card:#FFFFFF; --ink:#14202B; --muted:#5B6877; --line:#D3D9E0;
+  --accent:#0F6B6B; --accent-ink:#FFFFFF; --due:#B3261E; --due-bg:#FBE9E7; --ok:#2E7D4F;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0F161D;--card:#18222C;--ink:#E8EDF2;--muted:#95A3B2;--line:#2B3946;--accent:#4FC3C3;--accent-ink:#06201F;--due:#FF8A80;--due-bg:#3A1F1D;--ok:#6FD39A}
+}
+:root[data-theme="dark"]{--bg:#0F161D;--card:#18222C;--ink:#E8EDF2;--muted:#95A3B2;--line:#2B3946;--accent:#4FC3C3;--accent-ink:#06201F;--due:#FF8A80;--due-bg:#3A1F1D;--ok:#6FD39A}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:'Noto Naskh Arabic','Droid Arabic Naskh','Segoe UI',Tahoma,system-ui,sans-serif;line-height:1.65;-webkit-tap-highlight-color:transparent}
+main{max-width:560px;margin:0 auto;padding:14px 14px 90px}
+button,input,textarea,select{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* head */
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:4px 2px 14px}
+.date{font-size:1rem;color:var(--muted);margin:0}
+.clock{font-size:2.9rem;font-weight:700;line-height:1;letter-spacing:.01em;margin:0;font-variant-numeric:tabular-nums}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.chip{min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:.9rem}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* composer */
+.composer{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:18px}
+.composer textarea{width:100%;min-height:72px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:10px;font-size:1.05rem}
+.line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.line label{font-size:.9rem;color:var(--muted)}
+.line input[type=time],.line select{min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:0 10px}
+.btn{min-height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600}
+.btn.main{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);flex:1;min-width:8em}
+.btn.rec[aria-pressed="true"]{background:var(--due);color:#fff;border-color:var(--due)}
+.pending{display:none;align-items:center;gap:8px;margin-top:10px}
+.pending.on{display:flex}
+.pending audio{flex:1;min-width:0;height:40px}
+
+/* timeline */
+.sec{margin:0 2px 8px;font-size:1.05rem;font-weight:700}
+.rail{list-style:none;margin:0;padding:0 18px 0 0;border-inline-start:2px solid var(--line);margin-inline-start:7px;padding-inline-start:18px;padding-right:0}
+.note{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.note::before{content:"";position:absolute;inset-inline-start:-27px;top:20px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--muted)}
+.note.due{border-color:var(--due);background:var(--due-bg)}
+.note.due::before{background:var(--due);border-color:var(--due)}
+.note.done{opacity:.55}
+.note.done::before{background:var(--ok);border-color:var(--ok)}
+.note.due .when{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.note.due .when{animation:none}}
+.when{font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.note.due .when{color:var(--due)}
+.txt{margin:2px 0 0;white-space:pre-wrap;word-break:break-word;font-size:1.05rem}
+.note audio{width:100%;height:38px;margin-top:6px}
+.acts{display:flex;gap:8px;margin-top:8px}
+.acts .btn{min-height:42px;padding:0 14px;font-size:.92rem}
+.acts .ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.acts .del{color:var(--due)}
+.nowline{position:relative;list-style:none;margin:2px 0 12px;display:flex;align-items:center;gap:8px;color:var(--accent);font-weight:700;font-size:.9rem}
+.nowline::before{content:"";position:absolute;inset-inline-start:-26px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.nowline::after{content:"";flex:1;height:2px;background:var(--accent);opacity:.5}
+.empty{color:var(--muted);text-align:center;padding:24px 8px}
+
+/* alert banner */
+.banner{position:fixed;inset-inline:0;top:0;z-index:9;display:none;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 12px;background:var(--due);color:#fff}
+.banner.on{display:block}
+.banner p{margin:0 0 8px;font-size:1.1rem;font-weight:700}
+.banner .row{display:flex;gap:8px}
+.banner .btn{background:#fff;color:#7A1510;border-color:#fff;flex:1}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:22px;font-size:.92rem;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center}
+.toast.on{opacity:1}
+.foot{margin:18px 2px 0;color:var(--muted);font-size:.84rem}
+</style>
+</head>
+<body>
+
+<div class="banner" id="banner" role="alert" aria-live="assertive">
+  <p id="bannerTxt"></p>
+  <div class="row"><button class="btn" id="bDone">تم</button><button class="btn" id="bHide">إخفاء</button></div>
+</div>
+
+<main>
+  <header class="head">
+    <div>
+      <p class="date" id="date"></p>
+      <p class="clock" id="clock" aria-label="الساعة"></p>
+    </div>
+  </header>
+
+  <div class="tools">
+    <button class="chip" id="tWake" aria-pressed="false">إبقاء الشاشة مضيئة</button>
+    <button class="chip" id="tNotif" aria-pressed="false">تفعيل إشعارات النظام</button>
+  </div>
+
+  <section class="composer" aria-label="إضافة ملاحظة">
+    <textarea id="txt" placeholder="شنو تريد تسوي اليوم؟" aria-label="نص الملاحظة"></textarea>
+    <div class="pending" id="pending">
+      <audio id="pAudio" controls></audio>
+      <button class="btn" id="pDrop" aria-label="إزالة التسجيل">إزالة</button>
+    </div>
+    <div class="line">
+      <label for="time">الوقت</label>
+      <input type="time" id="time">
+      <label for="rep">كرر التنبيه</label>
+      <select id="rep">
+        <option value="1">كل دقيقة</option>
+        <option value="5">كل ٥ دقائق</option>
+        <option value="10" selected>كل ١٠ دقائق</option>
+        <option value="15">كل ١٥ دقيقة</option>
+        <option value="30">كل ٣٠ دقيقة</option>
+      </select>
+    </div>
+    <div class="line">
+      <button class="btn rec" id="rec" aria-pressed="false">تسجيل صوتي</button>
+      <button class="btn main" id="add">إضافة</button>
+    </div>
+  </section>
+
+  <h2 class="sec">جدول اليوم</h2>
+  <ul class="rail" id="list"></ul>
+  <p class="empty" id="empty">ما كو شي اليوم. أضف أول ملاحظة.</p>
+
+  <p class="foot">كل شي يتحذف تلقائياً مع بداية اليوم الجديد. التنبيه يتكرر لين تضغط «تم» (حتى لو التطبيق مسكّر، بحد أقصى ٤٨ تنبيه للملاحظة).</p>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var KEY='lawhat-alyawm-v1';
+var mem=null, S;
+
+/* ---------- storage ---------- */
+function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function load(){
+  try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.notes)return o;}}catch(e){}
+  return {day:dayKey(),notes:[]};
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(S));}
+  catch(e){mem=S;toast('ما كفت المساحة لحفظ هذا التسجيل');}
+}
+S=load();
+S.seq=S.seq||0;
+
+/* ---------- helpers ---------- */
+function toast(t){var el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove('on');},2400);}
+function pad(n){return n<10?'0'+n:''+n;}
+function fmt(h,m){
+  var s=(h<12)?'ص':'م',hh=h%12;if(hh===0)hh=12;
+  try{return new Intl.NumberFormat('ar-IQ',{useGrouping:false}).format(hh)+':'+new Intl.NumberFormat('ar-IQ',{minimumIntegerDigits:2,useGrouping:false}).format(m)+' '+s;}
+  catch(e){return hh+':'+pad(m)+' '+s;}
+}
+function tsOf(t){var p=t.split(':'),d=new Date();d.setHours(+p[0],+p[1],0,0);return d.getTime();}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+/* ---------- native (Capacitor) notifications ---------- */
+var LN=null;
+try{
+  if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications)LN=Capacitor.Plugins.LocalNotifications;
+}catch(e){}
+function nCancel(ids){
+  if(!LN||!ids||!ids.length)return;
+  try{LN.cancel({notifications:ids.map(function(i){return {id:i};})});}catch(e){}
+}
+function nCancelAll(){
+  if(!LN)return;
+  try{LN.getPending().then(function(r){
+    if(r&&r.notifications&&r.notifications.length)LN.cancel({notifications:r.notifications.map(function(x){return {id:x.id};})});
+  });}catch(e){}
+}
+function ensureNotif(){
+  if(!LN)return Promise.resolve();
+  return LN.checkPermissions().then(function(p){
+    if(p&&p.display==='granted')return;
+    return LN.requestPermissions();
+  }).catch(function(){});
+}
+function nSchedule(n){
+  if(!LN)return;
+  var now=Date.now(),start=tsOf(n.time),step=(n.rep||10)*60000;
+  var end=new Date();end.setHours(23,59,0,0);end=end.getTime();
+  var t=start;
+  if(t<=now)t=start+(Math.floor((now-start)/step)+1)*step;
+  var list=[];n.nids=[];
+  for(var i=0;t<=end&&i<48;i++,t+=step){
+    S.seq=(S.seq||0)+1;n.nids.push(S.seq);
+    list.push({id:S.seq,title:'لوحة اليوم',body:n.text||'ملاحظة صوتية',schedule:{at:new Date(t),allowWhileIdle:true},channelId:'alerts'});
+  }
+  save();
+  if(list.length){
+    try{LN.schedule({notifications:list}).catch(function(){toast('تعذّرت جدولة الإشعارات. فعّل الإشعارات للتطبيق من إعدادات الجهاز');});}catch(e){}
+  }
+}
+if(LN){
+  try{LN.createChannel({id:'alerts',name:'تنبيهات اليوم',importance:5,visibility:1,vibration:true});}catch(e){}
+}
+
+/* ---------- day rollover ---------- */
+function rollover(){
+  var k=dayKey();
+  if(S.day!==k){S.day=k;S.notes=[];save();nCancelAll();hideBanner();return true;}
+  return false;
+}
+
+/* ---------- audio / vibration / notification ---------- */
+var actx=null;
+function unlock(){
+  if(!actx){try{var C=window.AudioContext||window.webkitAudioContext;if(C)actx=new C();}catch(e){}}
+  if(actx&&actx.state==='suspended'){try{actx.resume();}catch(e){}}
+}
+document.addEventListener('pointerdown',unlock,{passive:true});
+function beep(){
+  if(!actx)return;
+  var t0=actx.currentTime;
+  [880,660,880].forEach(function(f,i){
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.type='sine';o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t0+i*.32);
+    g.gain.exponentialRampToValueAtTime(0.5,t0+i*.32+.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+i*.32+.28);
+    o.connect(g);g.connect(actx.destination);
+    o.start(t0+i*.32);o.stop(t0+i*.32+.3);
+  });
+}
+function buzz(){try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,400]);}catch(e){}}
+function sysNotify(n){
+  if(LN)return;
+  try{
+    if(typeof Notification!=='undefined'&&Notification.permission==='granted'){
+      new Notification('لوحة اليوم',{body:n.text||'تنبيه صوتي',tag:n.id,renotify:true});
+    }
+  }catch(e){}
+}
+
+/* ---------- banner ---------- */
+var bannerId=null;
+function showBanner(n){
+  bannerId=n.id;
+  $('bannerTxt').textContent=(n.text||'ملاحظة صوتية')+'  —  '+fmt(+n.time.split(':')[0],+n.time.split(':')[1]);
+  $('banner').classList.add('on');
+}
+function hideBanner(){bannerId=null;$('banner').classList.remove('on');}
+$('bHide').onclick=hideBanner;
+$('bDone').onclick=function(){if(bannerId)setDone(bannerId,true);hideBanner();};
+
+/* ---------- notes ---------- */
+function setDone(id,v){
+  S.notes.forEach(function(n){
+    if(n.id===id){
+      n.done=v;
+      if(v)nCancel(n.nids);else nSchedule(n);
+    }
+  });
+  save();render();
+}
+function delNote(id){
+  S.notes.forEach(function(n){if(n.id===id)nCancel(n.nids);});
+  S.notes=S.notes.filter(function(n){return n.id!==id;});
+  if(bannerId===id)hideBanner();
+  save();render();
+}
+function render(){
+  var list=$('list');list.innerHTML='';
+  var now=Date.now();
+  var arr=S.notes.slice().sort(function(a,b){return tsOf(a.time)-tsOf(b.time);});
+  $('empty').style.display=arr.length?'none':'block';
+  var placed=false;
+  function nowLine(){
+    var li=document.createElement('li');li.className='nowline';
+    var d=new Date();li.textContent='الآن '+fmt(d.getHours(),d.getMinutes());
+    list.appendChild(li);placed=true;
+  }
+  arr.forEach(function(n){
+    var ts=tsOf(n.time);
+    if(!placed&&ts>now)nowLine();
+    var due=!n.done&&ts<=now;
+    var li=document.createElement('li');
+    li.className='note'+(due?' due':'')+(n.done?' done':'');
+    var w=document.createElement('div');w.className='when';
+    var p=n.time.split(':');w.textContent=fmt(+p[0],+p[1]);
+    li.appendChild(w);
+    if(n.text){var t=document.createElement('p');t.className='txt';t.textContent=n.text;li.appendChild(t);}
+    if(n.audio){var a=document.createElement('audio');a.controls=true;a.src=n.audio;li.appendChild(a);}
+    var ac=document.createElement('div');ac.className='acts';
+    var b1=document.createElement('button');b1.className='btn'+(n.done?'':' ok');b1.textContent=n.done?'رجّعها':'تم';
+    b1.onclick=function(){setDone(n.id,!n.done);};
+    var b2=document.createElement('button');b2.className='btn del';b2.textContent='حذف';
+    b2.onclick=function(){delNote(n.id);};
+    ac.appendChild(b1);ac.appendChild(b2);li.appendChild(ac);
+    list.appendChild(li);
+  });
+  if(arr.length&&!placed)nowLine();
+}
+
+/* ---------- alert loop ---------- */
+var lastMinute=-1;
+function tick(){
+  var d=new Date();
+  var changed=rollover();
+  $('clock').textContent=fmt(d.getHours(),d.getMinutes());
+  try{$('date').textContent=d.toLocaleDateString('ar-IQ',{weekday:'long',day:'numeric',month:'long'});}catch(e){$('date').textContent=dayKey();}
+  var now=Date.now(),fired=false;
+  S.notes.forEach(function(n){
+    if(n.done)return;
+    var ts=tsOf(n.time);
+    if(ts>now)return;
+    var every=(n.rep||10)*60000;
+    if(!n.last||now-n.last>=every){
+      n.last=now;fired=true;
+      beep();buzz();sysNotify(n);showBanner(n);
+    }
+  });
+  if(fired)save();
+  if(fired||changed||d.getMinutes()!==lastMinute){lastMinute=d.getMinutes();render();}
+}
+setInterval(tick,5000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden){tick();if(wake.on)lockScreen();}});
+
+/* ---------- screen wake lock ---------- */
+var wake={on:false,lock:null};
+function lockScreen(){
+  if(!navigator.wakeLock){toast('الجهاز ما يدعم إبقاء الشاشة مضيئة');return;}
+  navigator.wakeLock.request('screen').then(function(l){wake.lock=l;}).catch(function(){toast('تعذّر إبقاء الشاشة مضيئة');});
+}
+$('tWake').onclick=function(){
+  wake.on=!wake.on;
+  $('tWake').setAttribute('aria-pressed',wake.on);
+  if(wake.on)lockScreen();else if(wake.lock){try{wake.lock.release();}catch(e){}wake.lock=null;}
+};
+$('tNotif').onclick=function(){
+  if(LN){
+    ensureNotif().then(function(){return LN.checkPermissions();}).then(function(p){
+      var ok=p&&p.display==='granted';
+      $('tNotif').setAttribute('aria-pressed',ok);
+      toast(ok?'تم تفعيل الإشعارات':'الإشعارات غير مسموحة. فعّلها من إعدادات الجهاز');
+    }).catch(function(){});
+    return;
+  }
+  if(typeof Notification==='undefined'){toast('إشعارات النظام غير مدعومة هنا. التنبيه بالصوت والاهتزاز يشتغل');return;}
+  Notification.requestPermission().then(function(p){
+    $('tNotif').setAttribute('aria-pressed',p==='granted');
+    toast(p==='granted'?'تم تفعيل الإشعارات':'الإشعارات غير مسموحة');
+  });
+};
+if(LN){try{LN.checkPermissions().then(function(p){if(p&&p.display==='granted')$('tNotif').setAttribute('aria-pressed','true');});}catch(e){}}
+try{if(typeof Notification!=='undefined'&&Notification.permission==='granted')$('tNotif').setAttribute('aria-pressed','true');}catch(e){}
+
+/* ---------- voice recording ---------- */
+var mr=null,chunks=[],pendingAudio=null,recTimer=null;
+function setPending(src){
+  pendingAudio=src;
+  $('pending').classList.toggle('on',!!src);
+  if(src)$('pAudio').src=src;else $('pAudio').removeAttribute('src');
+}
+$('pDrop').onclick=function(){setPending(null);};
+function stopRec(){
+  clearTimeout(recTimer);
+  if(mr&&mr.state!=='inactive'){try{mr.stop();}catch(e){}}
+  $('rec').setAttribute('aria-pressed','false');$('rec').textContent='تسجيل صوتي';
+}
+$('rec').onclick=function(){
+  unlock();
+  if($('rec').getAttribute('aria-pressed')==='true'){stopRec();return;}
+  if(!navigator.mediaDevices||!window.MediaRecorder){toast('التسجيل الصوتي غير مدعوم في هذا التطبيق');return;}
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    chunks=[];mr=new MediaRecorder(stream);
+    mr.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
+    mr.onstop=function(){
+      stream.getTracks().forEach(function(t){t.stop();});
+      var blob=new Blob(chunks,{type:mr.mimeType||'audio/webm'});
+      var fr=new FileReader();fr.onload=function(){setPending(fr.result);};fr.readAsDataURL(blob);
+    };
+    mr.start();
+    $('rec').setAttribute('aria-pressed','true');$('rec').textContent='إيقاف التسجيل';
+    recTimer=setTimeout(stopRec,60000);
+  }).catch(function(){toast('المايك غير مسموح. فعّل صلاحية المايك للتطبيق من إعدادات الجهاز');});
+};
+
+/* ---------- add ---------- */
+function defaultTime(){
+  var d=new Date();d.setMinutes(d.getMinutes()<30?30:60,0,0);
+  return pad(d.getHours())+':'+pad(d.getMinutes());
+}
+$('time').value=defaultTime();
+$('add').onclick=function(){
+  unlock();
+  var text=$('txt').value.trim(),time=$('time').value;
+  if(!text&&!pendingAudio){toast('اكتب ملاحظة أو سجّل صوتاً أولاً');return;}
+  if(!time){toast('حدد الوقت');return;}
+  var note={id:uid(),text:text,time:time,audio:pendingAudio,rep:+$('rep').value,done:false,last:0,nids:[]};
+  S.notes.push(note);
+  save();
+  ensureNotif().then(function(){nSchedule(note);});
+  $('txt').value='';setPending(null);$('time').value=defaultTime();
+  render();tick();
+};
+
+tick();
+})();
+</script>
+</body>
+</html>
